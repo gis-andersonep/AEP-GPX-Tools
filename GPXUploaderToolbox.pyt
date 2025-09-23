@@ -41,25 +41,61 @@ class GPXUploaderTool(object):
 
     def getParameterInfo(self):
         """Defines the parameters for the tool's dialog box."""
+
+        # Define the input GPX file parameter and then set its filter
+        in_gpx_file_param = arcpy.Parameter(
+            displayName="Input GPX File",
+            name="in_gpx_file",
+            datatype="DEFile",
+            parameterType="Required",
+            direction="Input"
+        )
+        in_gpx_file_param.filter.list = ['gpx']
+
+        # Define the URL parameter and then set its default value
+        arcgis_online_url_param = arcpy.Parameter(
+            displayName="ArcGIS Online URL",
+            name="arcgis_online_url",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        arcgis_online_url_param.defaultValue = "https://www.arcgis.com"
+
+        # Define the password parameter and then set its string_type
+        arcgis_password_param = arcpy.Parameter(
+            displayName="ArcGIS Online Password",
+            name="arcgis_password",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        # Set as "Password" so it is not saved or displayed in the history
+        arcgis_password_param.string_type = "Password"
+
+        # Define the waypoints URL parameter and then set its default value
+        waypoints_layer_url_param = arcpy.Parameter(
+            displayName="Waypoints Layer URL",
+            name="waypoints_layer_url",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        waypoints_layer_url_param.defaultValue = "https://services.arcgis.com/xxxxxxxxxxxx/arcgis/rest/services/MyTracks/FeatureServer/0"
+
+        # Define the tracks URL parameter and then set its default value
+        tracks_layer_url_param = arcpy.Parameter(
+            displayName="Tracks Layer URL",
+            name="tracks_layer_url",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        tracks_layer_url_param.defaultValue = "https://services.arcgis.com/xxxxxxxxxxxx/arcgis/rest/services/MyTracks/FeatureServer/1"
+
         params = [
-            arcpy.Parameter(
-                displayName="Input GPX File",
-                name="in_gpx_file",
-                datatype="DEFile",
-                parameterType="Required",
-                direction="Input",
-                filter={
-                    'list': ['gpx']
-                }
-            ),
-            arcpy.Parameter(
-                displayName="ArcGIS Online URL",
-                name="arcgis_online_url",
-                datatype="GPString",
-                parameterType="Optional",
-                direction="Input",
-                defaultValue="https://www.arcgis.com",
-            ),
+            in_gpx_file_param,
+            arcgis_online_url_param,
             arcpy.Parameter(
                 displayName="ArcGIS Online Username",
                 name="arcgis_username",
@@ -67,34 +103,9 @@ class GPXUploaderTool(object):
                 parameterType="Required",
                 direction="Input"
             ),
-            arcpy.Parameter(
-                displayName="ArcGIS Online Password",
-                name="arcgis_password",
-                datatype="GPString",
-                parameterType="Required",
-                direction="Input",
-                # Set as "Text" with a secure property so it is not saved
-                # or displayed in the history
-                string_type="Password"
-            ),
-            arcpy.Parameter(
-                displayName="Waypoints Layer URL",
-                name="waypoints_layer_url",
-                datatype="GPString",
-                parameterType="Required",
-                direction="Input",
-                # Example for user reference
-                defaultValue="https://services.arcgis.com/xxxxxxxxxxxx/arcgis/rest/services/MyTracks/FeatureServer/0"
-            ),
-            arcpy.Parameter(
-                displayName="Tracks Layer URL",
-                name="tracks_layer_url",
-                datatype="GPString",
-                parameterType="Required",
-                direction="Input",
-                # Example for user reference
-                defaultValue="https://services.arcgis.com/xxxxxxxxxxxx/arcgis/rest/services/MyTracks/FeatureServer/1"
-            )
+            arcgis_password_param,
+            waypoints_layer_url_param,
+            tracks_layer_url_param
         ]
         return params
 
@@ -204,7 +215,7 @@ class GPXUploaderTool(object):
         arcgis_password = parameters[3].valueAsText
         waypoints_layer_url = parameters[4].valueAsText
         tracks_layer_url = parameters[5].valueAsText
-        
+
         # 1. Connect to ArcGIS Online
         try:
             gis = self.authenticate_and_connect(arcgis_online_url, arcgis_username, arcgis_password)
@@ -235,3 +246,4 @@ class GPXUploaderTool(object):
             return
 
         arcpy.AddMessage("\nProcess complete. Data has been uploaded to ArcGIS Online.")
+     
