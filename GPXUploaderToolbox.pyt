@@ -41,7 +41,7 @@ class GPXUploaderTool(object):
 
     def getParameterInfo(self):
         """Defines the parameters for the tool's dialog box."""
-
+        
         # Define the input GPX file parameter and then set its filter
         in_gpx_file_param = arcpy.Parameter(
             displayName="Input GPX File",
@@ -61,7 +61,7 @@ class GPXUploaderTool(object):
             direction="Input"
         )
         arcgis_online_url_param.defaultValue = "https://www.arcgis.com"
-
+        
         # Define the password parameter and then set its string_type
         arcgis_password_param = arcpy.Parameter(
             displayName="ArcGIS Online Password",
@@ -92,6 +92,24 @@ class GPXUploaderTool(object):
             direction="Input"
         )
         tracks_layer_url_param.defaultValue = "https://services.arcgis.com/xxxxxxxxxxxx/arcgis/rest/services/MyTracks/FeatureServer/1"
+        
+        # Add the new parameter for Project Number
+        project_number_param = arcpy.Parameter(
+            displayName="Project Number",
+            name="project_number",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        # Add the new parameter for Surveyor
+        surveyor_param = arcpy.Parameter(
+            displayName="Surveyor",
+            name="surveyor",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
 
         params = [
             in_gpx_file_param,
@@ -105,7 +123,9 @@ class GPXUploaderTool(object):
             ),
             arcgis_password_param,
             waypoints_layer_url_param,
-            tracks_layer_url_param
+            tracks_layer_url_param,
+            project_number_param,
+            surveyor_param
         ]
         return params
 
@@ -132,8 +152,11 @@ class GPXUploaderTool(object):
             arcpy.AddError(f"Error accessing feature layers: {e}")
             raise
 
-    def parse_gpx_file(self, file_path):
-        """Parses a GPX file and extracts waypoints and tracks."""
+    def parse_gpx_file(self, file_path, project_number, surveyor):
+        """
+        Parses a GPX file and extracts waypoints and tracks,
+        adding the Project Number and Surveyor to each feature's attributes.
+        """
         arcpy.AddMessage(f"Parsing GPX file: {file_path}")
         waypoints_to_add = []
         tracks_to_add = []
@@ -152,7 +175,9 @@ class GPXUploaderTool(object):
                     },
                     "attributes": {
                         "name": waypoint.name if waypoint.name else "Unnamed Waypoint",
-                        "description": waypoint.description if waypoint.description else "No description"
+                        "description": waypoint.description if waypoint.description else "No description",
+                        "Project_Number": project_number, # New field
+                        "Surveyor": surveyor # New field
                     }
                 })
 
@@ -173,7 +198,9 @@ class GPXUploaderTool(object):
                             "geometry": line_geometry,
                             "attributes": {
                                 "name": track.name if track.name else "Unnamed Track",
-                                "description": track.description if track.description else "No description"
+                                "description": track.description if track.description else "No description",
+                                "Project_Number": project_number, # New field
+                                "Surveyor": surveyor # New field
                             }
                         })
 
@@ -215,7 +242,9 @@ class GPXUploaderTool(object):
         arcgis_password = parameters[3].valueAsText
         waypoints_layer_url = parameters[4].valueAsText
         tracks_layer_url = parameters[5].valueAsText
-
+        project_number = parameters[6].valueAsText
+        surveyor = parameters[7].valueAsText
+        
         # 1. Connect to ArcGIS Online
         try:
             gis = self.authenticate_and_connect(arcgis_online_url, arcgis_username, arcgis_password)
@@ -234,7 +263,7 @@ class GPXUploaderTool(object):
             return
 
         try:
-            waypoints, tracks = self.parse_gpx_file(gpx_file_path)
+            waypoints, tracks = self.parse_gpx_file(gpx_file_path, project_number, surveyor)
         except Exception:
             return
 
@@ -246,4 +275,3 @@ class GPXUploaderTool(object):
             return
 
         arcpy.AddMessage("\nProcess complete. Data has been uploaded to ArcGIS Online.")
-     
